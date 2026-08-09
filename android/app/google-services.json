@@ -7,9 +7,28 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:861917748123:android:451bd52626691d4b7b5f3e",
+        "android_client_info": {
+          "package_name": "com.arroz.user"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDel4IU1Czb2h6KS5ttR_IHAJQ6GGn6e0E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:861917748123:android:9b078cdbcdacc8887b5f3e",
         "android_client_info": {
-          "package_name": "com.example.arroz_app"
+          "package_name": "com.example.arroz_user"
         }
       },
       "oauth_client": [],

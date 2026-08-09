@@ -226,6 +226,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
         "createdAt": FieldValue.serverTimestamp(),
       });
 
+      await FirebaseFirestore.instance.collection("notifications").add({
+        "title": "New Order",
+        "body": "${selectedAddress!['fullName']} placed a new order.",
+        "type": "order",
+        "orderId": orderRef.id,
+        "isRead": false,
+        "timestamp": FieldValue.serverTimestamp(),
+      });
+
       // 2. Process based on selected payment method
       if (isOnlinePayment) {
         if (mounted) setState(() => isPlacingOrder = false);

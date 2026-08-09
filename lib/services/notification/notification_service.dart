@@ -6,9 +6,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  debugPrint("Background Notification: ${message.messageId}");
+Future<void> _firebaseMessagingBackgroundHandler(
+    RemoteMessage message,
+    ) async {
+  try {
+    await Firebase.initializeApp();
+
+    debugPrint(
+      'Background Notification: ${message.messageId}',
+    );
+  } catch (e) {
+    debugPrint(
+      'Background notification error: $e',
+    );
+  }
 }
 
 class NotificationService {
@@ -30,52 +41,86 @@ class NotificationService {
   }
 
   Future<void> initialize() async {
-    await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      criticalAlert: true,
-    );
+    try {
+      // Firebase Messaging permission
+      await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      // Background Firebase Messaging
+      FirebaseMessaging.onBackgroundMessage(
+        _firebaseMessagingBackgroundHandler,
+      );
 
-    const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+      const AndroidInitializationSettings androidSettings =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: DarwinInitializationSettings(
-        requestCriticalPermission: true,
-        requestSoundPermission: true,
-      ),
-    );
+      const InitializationSettings initSettings =
+      InitializationSettings(
+        android: androidSettings,
+        iOS: DarwinInitializationSettings(),
+      );
 
-    await _localNotifs.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: (details) {
-        _handleNotificationClick(details.payload);
-      },
-    );
+      await _localNotifs.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: (details) {
+          _handleNotificationClick(details.payload);
+        },
+      );
 
-    await _createChannel(channelAlerts, 'Inventory Alerts', 'Stock warnings', Importance.high);
-    await _createChannel(channelOrders, 'Orders & Cancellations', 'Realtime client orders', Importance.high);
-    await _createChannel(channelUsers, 'New User Registrations', 'New user accounts created', Importance.defaultImportance);
-    await _createChannel(channelWeather, 'Weather Updates', 'Daily forecast alerts', Importance.defaultImportance);
+      // Normal notification channels
+      await _createChannel(
+        channelAlerts,
+        'Inventory Alerts',
+        'Stock warnings',
+        Importance.high,
+      );
 
-    // 🚨 Emergency Siren Channel
-    const AndroidNotificationChannel sosChannel = AndroidNotificationChannel(
-      channelTyphoonSOS,
-      '🚨 EMERGENCY TYPHOON ALERTS',
-      description: 'Critical disaster warnings with continuous siren sound',
-      importance: Importance.max,
-      playSound: true,
-      enableVibration: true,
-      sound: RawResourceAndroidNotificationSound('typhoon_siren'),
-    );
+      await _createChannel(
+        channelOrders,
+        'Orders & Cancellations',
+        'Realtime client orders',
+        Importance.high,
+      );
 
-    await _localNotifs
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(sosChannel);
+      await _createChannel(
+        channelUsers,
+        'New User Registrations',
+        'New user accounts created',
+        Importance.defaultImportance,
+      );
+
+      await _createChannel(
+        channelWeather,
+        'Weather Updates',
+        'Daily forecast alerts',
+        Importance.defaultImportance,
+      );
+
+      // SOS channel
+      const AndroidNotificationChannel sosChannel =
+      AndroidNotificationChannel(
+        channelTyphoonSOS,
+        'EMERGENCY TYPHOON ALERTS',
+        description: 'Critical disaster warnings',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      );
+
+      final androidPlugin = _localNotifs
+          .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
+      await androidPlugin?.createNotificationChannel(sosChannel);
+
+      debugPrint('NotificationService initialized successfully.');
+    } catch (e, stackTrace) {
+      debugPrint('NotificationService initialization error: $e');
+      debugPrintStack(stackTrace: stackTrace);
+    }
   }
 
   Future<void> _createChannel(String id, String name, String desc, Importance importance) async {
@@ -114,7 +159,7 @@ class NotificationService {
       ongoing: isOngoing || isSOS,
       autoCancel: !isSOS,
       fullScreenIntent: isSOS,
-      sound: isSOS ? const RawResourceAndroidNotificationSound('typhoon_siren') : null,
+      sound: null,
     );
 
     NotificationDetails platformDetails = NotificationDetails(

@@ -1,18 +1,14 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/language_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'firebase_options.dart';
+import 'providers/language_provider.dart';
 import 'services/notification/notification_service.dart';
 
 import 'user/screens/login_page.dart';
 import 'user/screens/homeuser_page.dart';
-
-import 'admin/screens/login_page.dart' as admin;
-import 'admin/screens/dashboard_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,12 +27,6 @@ void main() async {
   );
 }
 
-// ==============================`
-// true  = Admin App
-// false = User App
-// ==============================
-const bool isAdminApp = false;
-
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -44,42 +34,12 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    // Binu-build ang observer para mabantayan kapag isinarado o inalis sa recent apps
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-
-    // Kapag detatached (lubusang inalis sa recent apps / pinatay ang app)
-    // O kapag hidden/paused (depende kung gusto mong mag-logout din pag-minimize)
-    if (state == AppLifecycleState.detached) {
-      _logoutOnExit();
-    }
-  }
-
-  void _logoutOnExit() {
-    if (isAdminApp && FirebaseAuth.instance.currentUser != null) {
-      FirebaseAuth.instance.signOut();
-    }
-  }
-
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "ArrozSistema",
+      title: "Arroz",
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: const Color(0xFF0F5132),
@@ -100,14 +60,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           }
 
           if (snapshot.hasData) {
-            return isAdminApp
-                ? const DashboardPage()
-                : const HomeUserPage();
+            return const HomeUserPage();
           }
 
-          return isAdminApp
-              ? const admin.LoginPage()
-              : const LoginUserPage();
+          return const LoginUserPage();
         },
       ),
     );

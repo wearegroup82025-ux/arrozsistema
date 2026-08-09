@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.arroz_app"
+    namespace = "com.arroz.user"
     
     // Naka-set sa 36 para sa geolocator at url_launcher
     compileSdk = 36
@@ -24,7 +24,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.arroz_app"
+        applicationId = "com.arroz.user"
 
         // Siguraduhing kahit papaano ay minSdk = 21 para sa MultiDex / Notifications
         minSdk = flutter.minSdkVersion

@@ -181,6 +181,14 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> with WidgetsBindingObserv
             "createdAt": FieldValue.serverTimestamp(),
           });
 
+          await FirebaseFirestore.instance.collection("notifications").add({
+            "title": "New User",
+            "body": "${widget.name ?? widget.phoneNumber} created a new account.",
+            "type": "user",
+            "isRead": false,
+            "timestamp": FieldValue.serverTimestamp(),
+          });
+
           TextInput.finishAutofillContext();
           _navigateToHome();
         } else {
@@ -225,6 +233,22 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> with WidgetsBindingObserv
             "email": "Registered via Cellphone Number",
             "role": "user",
             "createdAt": FieldValue.serverTimestamp(),
+          });
+
+          await FirebaseFirestore.instance.collection("notifications").add({
+            "title": "New User",
+            "body": "${widget.name ?? widget.phoneNumber} created a new account.",
+            "type": "user",
+            "isRead": false,
+            "timestamp": FieldValue.serverTimestamp(),
+          });
+
+          await FirebaseFirestore.instance.collection("notifications").add({
+            "title": "New User",
+            "body": "${widget.name ?? widget.phoneNumber} created a new account.",
+            "type": "user",
+            "isRead": false,
+            "timestamp": FieldValue.serverTimestamp(),
           });
 
           TextInput.finishAutofillContext();
