@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'homeuser_page.dart';
 import 'address_picker.dart';
 import 'payment_webview.dart';
+import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'orders_page.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -65,7 +67,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       if (productId != null && productId.toString().isNotEmpty) {
         final productRef = FirebaseFirestore.instance.collection('products').doc(productId);
-        
+
         // Ibabawas ang eksaktong bilang ng inorder sa stock ng produkto
         batch.update(productRef, {
           'stock': FieldValue.increment(-quantityOrdered)
@@ -77,7 +79,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   // --- ONLINE PAYMENT METHOD (PAYMONGO CHECKOUT PROCESS) ---
-  Future<void> _processOnlinePayment(DocumentReference orderRef, String methodKey) async {
+  Future<void> _processOnlinePayment(
+      DocumentReference orderRef,
+      String methodKey,
+      String customerName,
+      String customerEmail,
+      String customerPhone,
+      ) async {
+
     final primaryColor = Theme.of(context).primaryColor;
     final errorColor = Theme.of(context).colorScheme.error;
 
@@ -101,12 +110,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("https://arroz-backend.onrender.com/api/create-payment"),
-        headers: {"Content-Type": "application/json"},
+        Uri.parse(
+          "https://arroz-backend.onrender.com/api/create-payment",
+        ),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: jsonEncode({
           "orderId": orderRef.id,
           "amount": widget.totalAmount,
           "paymentMethod": methodKey,
+
+          "customerName": customerName,
+          "customerEmail": customerEmail,
+          "customerPhone": customerPhone,
         }),
       );
 
@@ -117,6 +134,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
         final checkoutUrl = data["checkoutUrl"];
 
         if (!mounted || checkoutUrl == null) return;
+
+        if (kIsWeb) {
+          final uri = Uri.parse(checkoutUrl);
+
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(
+              uri,
+              mode: LaunchMode.externalApplication,
+            );
+          } else {
+            throw Exception("Unable to open PayMongo Checkout.");
+          }
+
+          return;
+        }
 
         final result = await Navigator.of(context).push(
           MaterialPageRoute(
@@ -238,7 +270,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
       // 2. Process based on selected payment method
       if (isOnlinePayment) {
         if (mounted) setState(() => isPlacingOrder = false);
-        await _processOnlinePayment(orderRef, "gcash");
+        await _processOnlinePayment(
+          orderRef,
+          "gcash",
+          selectedAddress!['fullName']?.toString() ?? "Customer",
+          selectedAddress!['emailAddress']?.toString() ?? user?.email ?? "",
+          contactNum,
+        );
       } else {
         // 🟢 IDAGDAG: Bawasan ang stock para sa Cash on Delivery (COD) order
         await _deductProductStock();
@@ -255,8 +293,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
                   onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
+                    Navigator.pop(context); // close dialog
+
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => const OrdersPage(),
+                      ),
+                          (route) => false,
+                    );
                   },
                   child: const Text("OK", style: TextStyle(color: Colors.white)),
                 )

@@ -431,6 +431,47 @@ class _ShopeeAddressFormState extends State<_ShopeeAddressForm> {
     }
   }
 
+  void _showLocationDialog({
+    required String title,
+    required String content,
+    required String buttonText,
+    required VoidCallback onPressed,
+  }) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.location_off, color: Colors.red),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              onPressed();
+            },
+            child: Text(buttonText, style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _determineAndSetGPSLocation() async {
     if (!mounted) return;
     setState(() => isLocating = true);
@@ -438,7 +479,15 @@ class _ShopeeAddressFormState extends State<_ShopeeAddressForm> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        if (mounted) setState(() => isLocating = false);
+        if (mounted) {
+          setState(() => isLocating = false);
+          _showLocationDialog(
+            title: "Location Disabled",
+            content: "Naka-off ang Location/GPS ng iyong phone. Paki-buksan ito sa Settings para makuha ang iyong kasalukuyang lokasyon.",
+            buttonText: "Open Settings",
+            onPressed: () => Geolocator.openLocationSettings(),
+          );
+        }
         return;
       }
 
@@ -446,9 +495,30 @@ class _ShopeeAddressFormState extends State<_ShopeeAddressForm> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          if (mounted) setState(() => isLocating = false);
+          if (mounted) {
+            setState(() => isLocating = false);
+            _showLocationDialog(
+              title: "Permission Denied",
+              content: "Kailangan ng permission para ma-access ang iyong location.",
+              buttonText: "Grant Permission",
+              onPressed: () => Geolocator.requestPermission(),
+            );
+          }
           return;
         }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() => isLocating = false);
+          _showLocationDialog(
+            title: "Permission Permanently Denied",
+            content: "Naka-block ang location permission para sa app na ito. Paki-payagan ito sa App Settings.",
+            buttonText: "Open App Settings",
+            onPressed: () => Geolocator.openAppSettings(),
+          );
+        }
+        return;
       }
 
       Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);

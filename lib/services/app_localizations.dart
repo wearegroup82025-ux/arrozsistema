@@ -123,3 +123,4 @@ class AppLocalizations {
           ? "Enter your reason"
           : "Ilagay ang iyong dahilan";
 }
+

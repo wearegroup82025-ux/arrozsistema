@@ -144,21 +144,32 @@ class AuthService {
 
   Future<UserCredential> registerWithPhone({
     required String phoneNumber,
+    required String email,
     required String password,
   }) async {
-    String cleanPhone = normalizePhone(phoneNumber);
+    final cleanEmail = email.trim().toLowerCase();
 
-    String fakeEmail =
-        "$cleanPhone@carrotcarper.internal";
-    final methods =
-    await _auth.fetchSignInMethodsForEmail(fakeEmail);
+    final emailRegex =
+    RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
-    if (methods.isNotEmpty) {
-      throw Exception("May account na gamit ang numerong ito.");
+    if (!emailRegex.hasMatch(cleanEmail)) {
+      throw Exception("Maling format ng email address.");
     }
 
+    final cleanPhone = normalizePhone(phoneNumber);
+
+    // Check kung existing na ang email sa Firebase Authentication
+    final methods = await _auth.fetchSignInMethodsForEmail(cleanEmail);
+
+    if (methods.isNotEmpty) {
+      throw Exception(
+        "May account na gamit ang email na ito.",
+      );
+    }
+
+    // Firebase Authentication will now use the REAL email.
     return await _auth.createUserWithEmailAndPassword(
-      email: fakeEmail,
+      email: cleanEmail,
       password: password,
     );
   }

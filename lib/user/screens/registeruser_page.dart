@@ -29,6 +29,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
 
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -46,17 +47,34 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
       'langLabel': 'Language: ',
       'title': 'Create Account',
       'subtitle': 'Choose your preferred method to verify your account.',
+
+      // Registration Method
       'modeEmail': 'Using Email',
       'modePhone': 'Using Phone',
+
+      // Personal Information
+      'name': 'Full Name',
+      'nameHint': 'Enter your full name',
       'email': 'Email Address',
+      'emailHint': 'Example: juan@gmail.com',
+
+      // Password
       'password': 'Password',
       'confirmPassword': 'Repeat Password',
+
+      // Phone
       'phone': 'Cellphone Number',
       'phoneHint': 'Example: 09123456789',
+
+      // Password Rules
       'rule1': 'At least 8 characters or numbers',
       'rule2': 'At least one number (0-9)',
       'rule3': 'At least one symbol (e.g., @, #, \$)',
+
+      // Button
       'btnRegister': 'CREATE ACCOUNT',
+
+      // Terms
       'termsText': 'I agree to the ',
       'termsLink': 'Terms & Privacy Policy',
       'termsModalTitle': 'Terms of Service & Privacy Policy',
@@ -74,31 +92,59 @@ You agree not to submit false identification details, disrupt platform security,
 ''',
       'termsAgreeBtn': 'I AGREE & CONTINUE',
       'termsDeclineBtn': 'CANCEL',
+
+      // Validation
+      'valName': 'Enter your full name',
       'valEmail': 'Enter a valid email address',
+      'valPhoneEmail': 'Enter a valid email address',
       'valPassword': 'Do not leave password blank',
       'valConfirm': 'Passwords do not match',
       'valPhone': 'Enter a valid 11-digit cellphone number',
       'valTerms': 'You must accept the Terms & Privacy Policy to proceed.',
+
+      // Password Alert
       'pwdAlert': 'Please follow all password security requirements.',
+
+      // Success Messages
       'successEmail': 'Verification code sent to your email.',
       'successPhone': 'SMS verification code sent to your phone.',
+
+      // Error
       'errorConn': 'Unable to send OTP. Please check the email or phone number.',
     },
+
     'Tagalog': {
       'langLabel': 'Wika: ',
       'title': 'Gumawa ng Account',
       'subtitle': 'Pumili ng paraan upang mai-verify ang iyong account.',
+
+      // Registration Method
       'modeEmail': 'Gamit ang Email',
       'modePhone': 'Gamit ang Numero',
+
+      // Personal Information
+      'name': 'Buong Pangalan',
+      'nameHint': 'Ilagay ang iyong buong pangalan',
       'email': 'Email Address',
+      'emailHint': 'Halimbawa: juan@gmail.com',
+
+      // Password
       'password': 'Password',
       'confirmPassword': 'Ulitin ang Password',
+
+      // Phone
       'phone': 'Numero ng Cellphone',
       'phoneHint': 'Halimbawa: 09123456789',
+
+      // Password Rules
       'rule1': 'Hindi bababa sa 8 letra o numero',
       'rule2': 'May kahit isang numero (0-9)',
       'rule3': 'May special symbol (hal. @, #, \$)',
+
+      // Button
       'btnRegister': 'MAG-REGISTER NGAYON',
+
+      // Terms
       'termsText': 'Sumasang-ayon ako sa ',
       'termsLink': 'Terms & Privacy Policy',
       'termsModalTitle': 'Mga Tuntunin at Privacy Policy',
@@ -116,16 +162,26 @@ Bawal ang paglalagay ng pekeng impormasyon, pagsubok na sirain ang seguridad ng 
 ''',
       'termsAgreeBtn': 'SUMASANG-AYON AKO',
       'termsDeclineBtn': 'KANSELAHIN',
+
+      // Validation
+      'valName': 'Ilagay ang iyong buong pangalan',
       'valEmail': 'Gumamit ng tamang email format',
+      'valPhoneEmail': 'Gumamit ng tamang email format',
       'valPassword': 'Huwag iwanang blangko ang password',
       'valConfirm': 'Hindi magkatugma ang password',
       'valPhone': 'Ilagay ang tamang 11-digit cellphone number',
       'valTerms': 'Kailangan mong sumang-ayon sa Terms & Privacy Policy.',
+
+      // Password Alert
       'pwdAlert': 'Mangyaring sundin ang password rules para sa iyong seguridad.',
+
+      // Success Messages
       'successEmail': 'Napadala na ang verification code sa iyong email.',
       'successPhone': 'Napadala na ang SMS code sa iyong cellphone.',
+
+      // Error
       'errorConn': 'Hindi maipadala ang OTP. Pakisuri ang email o numero.',
-    }
+    },
   };
 
   @override
@@ -255,6 +311,7 @@ Bawal ang paglalagay ng pekeng impormasyon, pagsubok na sirain ang seguridad ng 
 
     setState(() => _loading = true);
 
+    final name = _cleanInput(_nameController.text);
     final email = _cleanInput(_emailController.text);
     final phone = _cleanInput(_phoneController.text);
     final password = _passwordController.text;
@@ -263,8 +320,8 @@ Bawal ang paglalagay ng pekeng impormasyon, pagsubok na sirain ang seguridad ng 
       if (_selectedMethodIndex == 0) {
         // 1. Subukang i-validate at ipadala ang OTP gamit ang 10-second guard
         await AuthService.instance.generateAndSaveEmailOTP(
-          email: email, 
-          name: email,
+          email: email,
+          name: name,
         ).timeout(
           const Duration(seconds: 10),
           onTimeout: () {
@@ -285,6 +342,7 @@ Bawal ang paglalagay ng pekeng impormasyon, pagsubok na sirain ang seguridad ng 
               isEmailMode: true,
               passwordForEmail: password,
               name: email,
+              email: email,
               phone: "N/A",
               address: "N/A",
             ),
@@ -315,7 +373,8 @@ Bawal ang paglalagay ng pekeng impormasyon, pagsubok na sirain ang seguridad ng 
               phoneNumber: formattedPhone,
               verificationId: 'PHONE_TEXTBEE_MODE',
               isEmailMode: false,
-              name: formattedPhone,
+              name: name,
+              email: email,
               phone: formattedPhone,
               address: "N/A",
             ),
@@ -328,7 +387,7 @@ Bawal ang paglalagay ng pekeng impormasyon, pagsubok na sirain ang seguridad ng 
       if (errorMsg.isEmpty) {
         errorMsg = txt['errorConn']!;
       }
-      
+
       _showNotification(errorMsg, ArrozTheme.error);
     } finally {
       // 4. Ibalik ang button sa active state
@@ -345,7 +404,7 @@ Bawal ang paglalagay ng pekeng impormasyon, pagsubok na sirain ang seguridad ng 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          message, 
+          message,
           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: color,
@@ -477,15 +536,60 @@ Bawal ang paglalagay ng pekeng impormasyon, pagsubok na sirain ang seguridad ng 
                       ),
                     ] else ...[
                       _buildInputField(
+                        controller: _nameController,
+                        label: txt['name']!,
+                        icon: Icons.person_outline_rounded,
+                        placeholder: txt['nameHint']!,
+                        keyboardType: TextInputType.name,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return txt['valName'];
+                          }
+
+                          if (v.trim().length < 2) {
+                            return txt['valName'];
+                          }
+
+                          return null;
+                        },
+                      ),
+
+                      _buildInputField(
+                        controller: _emailController,
+                        label: txt['email']!,
+                        icon: Icons.mail_outline_rounded,
+                        placeholder: txt['emailHint']!,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return txt['valPhoneEmail'];
+                          }
+
+                          final emailRegExp =
+                          RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+                          return !emailRegExp.hasMatch(v.trim())
+                              ? txt['valPhoneEmail']
+                              : null;
+                        },
+                      ),
+
+                      _buildInputField(
                         controller: _phoneController,
                         label: txt['phone']!,
                         icon: Icons.phone_android_rounded,
                         keyboardType: TextInputType.phone,
                         placeholder: txt['phoneHint']!,
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty) return txt['valPhone'];
+                          if (v == null || v.trim().isEmpty) {
+                            return txt['valPhone'];
+                          }
+
                           final cleaned = v.trim().replaceAll(RegExp(r'\D'), '');
-                          return cleaned.length < 10 || cleaned.length > 11 ? txt['valPhone'] : null;
+
+                          return cleaned.length < 10 || cleaned.length > 11
+                              ? txt['valPhone']
+                              : null;
                         },
                       ),
                     ],

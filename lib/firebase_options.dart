@@ -49,12 +49,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDel4IU1Czb2h6KS5ttR_IHAJQ6GGn6e0E',
-    appId: '1:861917748123:android:9b078cdbcdacc8887b5f3e',
+    appId: '1:861917748123:android:451bd52626691d4b7b5f3e',
     messagingSenderId: '861917748123',
     projectId: 'arroz-sys',
     storageBucket: 'arroz-sys.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAhRPGkTgb4mB4vZeBw6DXEGvJlI5ibX1A',
     appId: '1:861917748123:ios:a58db8f41663f64f7b5f3e',
@@ -63,7 +62,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'arroz-sys.firebasestorage.app',
     iosBundleId: 'com.example.arrozApp',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyAhRPGkTgb4mB4vZeBw6DXEGvJlI5ibX1A',
     appId: '1:861917748123:ios:a58db8f41663f64f7b5f3e',
@@ -81,5 +79,4 @@ class DefaultFirebaseOptions {
     authDomain: 'arroz-sys.firebaseapp.com',
     storageBucket: 'arroz-sys.firebasestorage.app',
   );
-
 }

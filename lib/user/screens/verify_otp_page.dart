@@ -26,16 +26,18 @@ class VerifyOtpPage extends StatefulWidget {
   final String? phone;
   final String? address;
   final String initialLanguage;
+  final String email;
 
   const VerifyOtpPage({
     super.key,
     required this.phoneNumber,
     required this.verificationId,
-    this.isEmailMode = false,
+    required this.isEmailMode,
     this.passwordForEmail,
-    this.name,
-    this.phone,
-    this.address,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.address,
     this.initialLanguage = 'Tagalog',
   });
 
@@ -201,24 +203,26 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> with WidgetsBindingObserv
         );
 
         if (isCorrect) {
-
           final password = await Navigator.push<String>(
             context,
             MaterialPageRoute(
               builder: (_) => CreatePhonePasswordPage(
                 phoneNumber: widget.phoneNumber,
+                email: widget.email,
               ),
             ),
           );
 
           if (password == null) {
-            setState(() => _isLoading = false);
+            if (mounted) {
+              setState(() => _isLoading = false);
+            }
             return;
           }
 
-          var userCredential =
-          await AuthService.instance.registerWithPhone(
+          final userCredential = await AuthService.instance.registerWithPhone(
             phoneNumber: widget.phoneNumber,
+            email: widget.email,
             password: password,
           );
 
@@ -230,17 +234,34 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> with WidgetsBindingObserv
             "name": widget.name ?? "",
             "phone": widget.phoneNumber,
             "address": widget.address ?? "",
-            "email": "Registered via Cellphone Number",
+            "email": widget.email.trim().toLowerCase(),
             "role": "user",
             "createdAt": FieldValue.serverTimestamp(),
           });
 
           await FirebaseFirestore.instance.collection("notifications").add({
             "title": "New User",
-            "body": "${widget.name ?? widget.phoneNumber} created a new account.",
+            "body":
+            "${widget.name ?? widget.phoneNumber} created a new account.",
             "type": "user",
             "isRead": false,
             "timestamp": FieldValue.serverTimestamp(),
+          });
+
+          TextInput.finishAutofillContext();
+          _navigateToHome();
+
+          await FirebaseFirestore.instance
+              .collection("users")
+              .doc(userCredential.user!.uid)
+              .set({
+            "uid": userCredential.user!.uid,
+            "name": widget.name ?? "",
+            "phone": widget.phoneNumber,
+            "address": widget.address ?? "",
+            "email": widget.email.trim().toLowerCase(),
+            "role": "user",
+            "createdAt": FieldValue.serverTimestamp(),
           });
 
           await FirebaseFirestore.instance.collection("notifications").add({

@@ -181,12 +181,29 @@ class _ProfilePageState extends State<ProfilePage> {
                               final String newLName = lNameController.text.trim();
                               final String full = "$newFName ${newMI.isNotEmpty ? '$newMI. ' : ''}$newLName".trim();
 
-                              await FirebaseFirestore.instance.collection("users").doc(_currentUser!.uid).update({
+                              final authPhone = _currentUser!.phoneNumber;
+
+                              final Map<String, dynamic> updateData = {
+                                'uid': _currentUser!.uid,
                                 'firstName': newFName,
                                 'middleInitial': newMI,
                                 'lastName': newLName,
                                 'name': full,
-                              });
+                                'updatedAt': FieldValue.serverTimestamp(),
+                              };
+
+
+                              if (authPhone != null && authPhone.isNotEmpty) {
+                                updateData['phone'] = authPhone;
+                              }
+
+                              await FirebaseFirestore.instance
+                                  .collection("users")
+                                  .doc(_currentUser!.uid)
+                                  .set(
+                                updateData,
+                                SetOptions(merge: true),
+                              );
 
                               await _currentUser!.updateDisplayName(full);
 
@@ -307,9 +324,20 @@ class _ProfilePageState extends State<ProfilePage> {
                             try {
                               final String newPhone = phoneController.text.trim();
 
-                              await FirebaseFirestore.instance.collection("users").doc(_currentUser!.uid).update({
+                              final Map<String, dynamic> updateData = {
+                                'uid': _currentUser!.uid,
                                 'phone': newPhone,
-                              });
+                                'updatedAt': FieldValue.serverTimestamp(),
+                              };
+
+
+                              await FirebaseFirestore.instance
+                                  .collection("users")
+                                  .doc(_currentUser!.uid)
+                                  .set(
+                                updateData,
+                                SetOptions(merge: true),
+                              );
 
                               if (!context.mounted) return;
                               Navigator.pop(context);
@@ -330,6 +358,228 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ],
                   )
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ============================================================================
+// 3. DIALOG PARA SA EMAIL
+// ============================================================================
+
+  void _showEditEmailDialog(String currentEmail) {
+    final emailController = TextEditingController(
+      text: currentEmail == 'Walang Email' ? '' : currentEmail,
+    );
+
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return Dialog(
+            backgroundColor: ArrozTheme.cardWhite,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 450),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: ArrozTheme.mintAccent,
+                        radius: 18,
+                        child: Icon(
+                          Icons.email_outlined,
+                          color: ArrozTheme.emerald,
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        "I-edit ang Email",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: ArrozTheme.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  const Text(
+                    "Ilagay ang email address na gusto mong gamitin sa iyong account.",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: ArrozTheme.textSub,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Form(
+                    key: formKey,
+                    child: TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: "Email Address",
+                        hintText: "example@gmail.com",
+                        prefixIcon: const Icon(
+                          Icons.email_outlined,
+                          color: ArrozTheme.emerald,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: ArrozTheme.emerald,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        final email = value?.trim() ?? '';
+
+                        if (email.isEmpty) {
+                          return "Kailangan ang Email Address";
+                        }
+
+                        final emailRegex = RegExp(
+                          r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                        );
+
+                        if (!emailRegex.hasMatch(email)) {
+                          return "Ilagay ang tamang email address";
+                        }
+
+                        return null;
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: isSaving
+                            ? null
+                            : () => Navigator.pop(dialogContext),
+                        child: const Text(
+                          "Kanselahin",
+                          style: TextStyle(
+                            color: ArrozTheme.textSub,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ArrozTheme.emerald,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                        onPressed: isSaving
+                            ? null
+                            : () async {
+                          if (!formKey.currentState!.validate()) {
+                            return;
+                          }
+
+                          setDialogState(() {
+                            isSaving = true;
+                          });
+
+                          try {
+                            final String newEmail =
+                            emailController.text.trim().toLowerCase();
+
+                            await FirebaseFirestore.instance
+                                .collection("users")
+                                .doc(_currentUser!.uid)
+                                .set(
+                              {
+                                'uid': _currentUser!.uid,
+                                'email': newEmail,
+                                'updatedAt':
+                                FieldValue.serverTimestamp(),
+                              },
+                              SetOptions(merge: true),
+                            );
+
+                            if (!dialogContext.mounted) return;
+
+                            Navigator.pop(dialogContext);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Matagumpay na na-update ang email!",
+                                ),
+                                backgroundColor: ArrozTheme.emerald,
+                              ),
+                            );
+                          } catch (e) {
+                            setDialogState(() {
+                              isSaving = false;
+                            });
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "Pumalya sa pag-save: $e",
+                                ),
+                                backgroundColor:
+                                ArrozTheme.dangerRed,
+                              ),
+                            );
+                          }
+                        },
+                        child: isSaving
+                            ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                            : const Text(
+                          "I-save",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -386,8 +636,37 @@ class _ProfilePageState extends State<ProfilePage> {
             });
           }
 
-          final String userEmail = userData['email'] ?? _currentUser!.email ?? 'Walang Email';
-          final String userPhone = userData['phone'] ?? 'Walang Phone Number';
+          // ============================================================
+// ACCOUNT CONTACT INFORMATION
+// ============================================================
+
+          final String authEmail = (_currentUser!.email ?? '').trim();
+          final String authPhone = (_currentUser!.phoneNumber ?? '').trim();
+
+          final String firestoreEmail =
+          (userData['email']?.toString() ?? '').trim();
+
+          final String firestorePhone =
+          (userData['phone']?.toString() ?? '').trim();
+
+// Email:
+// Gamitin ang Firestore email kung mayroon.
+// Kung wala, saka lang gamitin ang Firebase Auth email.
+// Kung wala talaga, "Walang Email".
+          final String userEmail = firestoreEmail.isNotEmpty
+              ? firestoreEmail
+              : authEmail.isNotEmpty
+              ? authEmail
+              : 'Walang Email';
+
+// Phone:
+// Gamitin ang Firestore phone kung mayroon.
+// Kung wala, gamitin ang Firebase Auth phone number.
+          final String userPhone = firestorePhone.isNotEmpty
+              ? firestorePhone
+              : authPhone.isNotEmpty
+              ? authPhone
+              : 'Walang Phone Number';
           final String? photoUrl = userData['photoUrl'] ?? _currentUser!.photoURL;
 
           return LayoutBuilder(
@@ -601,8 +880,20 @@ class _ProfilePageState extends State<ProfilePage> {
                                                 email: userEmail,
                                                 phone: userPhone,
                                                 isNameMissing: isNameMissing,
-                                                onEditNameTap: () => _showEditNameDialog(firstName, middleInitial, lastName),
-                                                onEditPhoneTap: () => _showEditPhoneDialog(userPhone),
+
+                                                onEditNameTap: () => _showEditNameDialog(
+                                                  firstName,
+                                                  middleInitial,
+                                                  lastName,
+                                                ),
+
+                                                onEditEmailTap: () => _showEditEmailDialog(
+                                                  userEmail,
+                                                ),
+
+                                                onEditPhoneTap: () => _showEditPhoneDialog(
+                                                  userPhone,
+                                                ),
                                               ),
                                             ),
                                           );
@@ -707,43 +998,77 @@ class _ProfilePageState extends State<ProfilePage> {
     required VoidCallback onTap,
     bool isWarning = false,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isWarning ? ArrozTheme.warningBg : ArrozTheme.cardWhite,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isWarning ? ArrozTheme.warningOrange.withOpacity(0.4) : ArrozTheme.dividerColor,
-          width: 0.8,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: isWarning ? ArrozTheme.warningOrange.withOpacity(0.15) : ArrozTheme.mintAccent,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: isWarning ? ArrozTheme.warningOrange : ArrozTheme.emerald, size: 22),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: ArrozTheme.textDark)),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isWarning ? FontWeight.bold : FontWeight.normal,
-            color: isWarning ? ArrozTheme.warningOrange : ArrozTheme.textSub,
-          ),
-        ),
-        trailing: const Icon(Icons.chevron_right_rounded, size: 22, color: ArrozTheme.textSub),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isWarning
+                ? ArrozTheme.warningBg
+                : ArrozTheme.cardWhite,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isWarning
+                  ? ArrozTheme.warningOrange.withOpacity(0.4)
+                  : ArrozTheme.dividerColor,
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 6,
+            ),
+            leading: Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: isWarning
+                    ? ArrozTheme.warningBg
+                    : ArrozTheme.mintAccent,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: isWarning
+                    ? ArrozTheme.warningOrange
+                    : ArrozTheme.emerald,
+                size: 22,
+              ),
+            ),
+            title: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: ArrozTheme.textDark,
+              ),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: ArrozTheme.textSub,
+                ),
+              ),
+            ),
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              color: ArrozTheme.textSub,
+              size: 20,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -865,7 +1190,9 @@ class PersonalDetailsPage extends StatelessWidget {
   final String email;
   final String phone;
   final bool isNameMissing;
+
   final VoidCallback onEditNameTap;
+  final VoidCallback onEditEmailTap;
   final VoidCallback onEditPhoneTap;
 
   const PersonalDetailsPage({
@@ -875,6 +1202,7 @@ class PersonalDetailsPage extends StatelessWidget {
     required this.phone,
     this.isNameMissing = false,
     required this.onEditNameTap,
+    required this.onEditEmailTap,
     required this.onEditPhoneTap,
   });
 
@@ -936,9 +1264,39 @@ class PersonalDetailsPage extends StatelessWidget {
                     ),
                     const Divider(height: 1, color: ArrozTheme.dividerColor),
                     ListTile(
-                      leading: const Icon(Icons.email_outlined, color: ArrozTheme.emerald),
-                      title: const Text("Email Address", style: TextStyle(fontSize: 13, color: ArrozTheme.textSub)),
-                      subtitle: Text(email, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: ArrozTheme.textDark)),
+                      leading: const Icon(
+                        Icons.email_outlined,
+                        color: ArrozTheme.emerald,
+                      ),
+                      title: const Text(
+                        "Email Address",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: ArrozTheme.textSub,
+                        ),
+                      ),
+                      subtitle: Text(
+                        email,
+                        style: TextStyle(
+                          fontWeight: email == 'Walang Email'
+                              ? FontWeight.normal
+                              : FontWeight.w600,
+                          fontSize: 14,
+                          color: email == 'Walang Email'
+                              ? ArrozTheme.textSub
+                              : ArrozTheme.textDark,
+                        ),
+                      ),
+                      trailing: TextButton(
+                        onPressed: onEditEmailTap,
+                        child: Text(
+                          email == 'Walang Email' ? "I-set" : "I-edit",
+                          style: const TextStyle(
+                            color: ArrozTheme.emerald,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                     const Divider(height: 1, color: ArrozTheme.dividerColor),
                     ListTile(
